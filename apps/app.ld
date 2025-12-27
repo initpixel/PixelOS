@@ -1,0 +1,9 @@
+OUTPUT_FORMAT(binary)
+ENTRY(main)
+SECTIONS
+{
+    . = 0x400000;
+    .text : { *(.text) }
+    .data : { *(.data) }
+    .bss  : { *(.bss)  }
+}

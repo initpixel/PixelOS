@@ -1,61 +1,79 @@
+# Compiler and Linker definitions
 CC = gcc
 AS = nasm
 LD = ld
 
-# Output binary name
+# Final kernel binary name
 TARGET = pixelos.bin
 
-# Compilation flags
-CFLAGS = -m32 -ffreestanding -Iinclude -c -Wall
+# Compilation and Linking flags
+CFLAGS = -m32 -ffreestanding -Iinclude -c -Wall -fno-pic -fno-stack-protector
 ASFLAGS = -f elf32
-LDFLAGS = -m elf_i386 -T link.ld
+LDFLAGS_KERN = -m elf_i386 -T link.ld
 
-# Directories
+# Apps linking flags (Apps are linked to a different base address)
+LDFLAGS_APPS = -m elf_i386 -T apps/app.ld
+
+# Directory structure
 LIBDIR = lib
 KERNELDIR = kernel
+APPSDIR = apps
 OBJDIR = objectFiles
 
-# --- FILE SEARCH LOGIC ---
+# --- KERNEL SOURCE DISCOVERY ---
 
-# Search for all .c files in lib/, kernel/ and all subdirectories (e.g., kernel/fs/)
+# Find all C files in lib/, kernel/ and subfolders (like kernel/fs/ or kernel/drivers/)
 C_SOURCES = $(wildcard $(LIBDIR)/*.c) \
             $(wildcard $(KERNELDIR)/*.c) \
             $(wildcard $(KERNELDIR)/**/*.c)
 
-# Main assembly source file
+# Main assembly entry point
 ASM_SOURCE = $(KERNELDIR)/kernel.asm
 
-# Convert .c source paths to .o object files inside OBJDIR
-# $(notdir) is used to prevent path conflicts for object files
+# Generate object file list for the kernel
+# $(notdir) prevents directory prefix in object names to keep OBJDIR flat
 OBJ = $(patsubst %.c, $(OBJDIR)/%.o, $(notdir $(C_SOURCES)))
 OBJ += $(OBJDIR)/kasm.o
 
-# --- BUILD RULES ---
+# --- APPLICATION SOURCE DISCOVERY ---
 
-all: prepare $(TARGET)
+# Every .c file in apps/ will be compiled into a separate .bin file
+APP_SOURCES = $(wildcard $(APPSDIR)/*.c)
+APP_BINS = $(patsubst $(APPSDIR)/%.c, %.bin, $(APP_SOURCES))
 
+# --- BUILD TARGETS ---
+
+# Default target: build the kernel and all discovered apps
+all: prepare $(TARGET) $(APP_BINS)
+
+# Create necessary directories
 prepare:
 	mkdir -p $(OBJDIR)
 
-# Link the final binary
+# Link the final kernel binary
 $(TARGET): $(OBJ)
-	$(LD) $(LDFLAGS) -o $@ $^
+	$(LD) $(LDFLAGS_KERN) -o $@ $^
 
-# Compile files from lib/
+# Pattern rule for building applications
+# Each app is compiled to a temporary .o and then linked into a flat .bin
+%.bin: $(APPSDIR)/%.c
+	$(CC) $(CFLAGS) $< -o $(OBJDIR)/$*.app.o
+	$(LD) $(LDFLAGS_APPS) -o $@ $(OBJDIR)/$*.app.o
+
+# Rules for compiling kernel-related object files from different source directories
 $(OBJDIR)/%.o: $(LIBDIR)/%.c
 	$(CC) $(CFLAGS) $< -o $@
 
-# Compile files from kernel/
 $(OBJDIR)/%.o: $(KERNELDIR)/%.c
 	$(CC) $(CFLAGS) $< -o $@
 
-# Compile files from nested directories (e.g., kernel/fs/)
 $(OBJDIR)/%.o: $(KERNELDIR)/*/%.c
 	$(CC) $(CFLAGS) $< -o $@
 
-# Compile assembly source
+# Compile the main assembly file
 $(OBJDIR)/kasm.o: $(ASM_SOURCE)
 	$(AS) $(ASFLAGS) $< -o $@
 
+# Remove build artifacts
 clean:
-	rm -rf $(OBJDIR) $(TARGET)
+	rm -rf $(OBJDIR) $(TARGET) *.bin

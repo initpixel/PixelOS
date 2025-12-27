@@ -42,5 +42,6 @@ struct __attribute__((packed)) ext2_inode {
 
 void ext2_detect(void);
 void ext2_ls();
+void run_app(const char* filename);
 
 #endif

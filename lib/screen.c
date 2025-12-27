@@ -1,5 +1,5 @@
 #include "screen.h"
-#include "io.h" // Нужен для outb
+#include "io.h"
 
 static int cursor = 0;
 static char* vidptr = (char*)VIDEO_ADDR;
@@ -70,10 +70,11 @@ void screen_print_char_color(char c, char color) {
     char* vidptr = (char*)0xb8000;
     if (c == '\n') {
         cursor = cursor + (160 - cursor % 160);
-    } else if (cursor < 80 * 25 * 2) { // Проверка на выход за границы экрана
+    } else if (cursor < 80 * 25 * 2) {
         vidptr[cursor++] = c;
         vidptr[cursor++] = color;
     }
+    update_hardware_cursor();
 }
 
 void screen_print_color(const char* str, char color) {

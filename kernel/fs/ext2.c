@@ -49,3 +49,17 @@ void ext2_ls() {
         entry = (struct ext2_dir_entry*)((uint8_t*)buffer + offset);
     }
 }
+
+void run_app(const char* filename) {
+    uint32_t file_block = 10; 
+
+    uint8_t* load_address = (uint8_t*)0x400000;
+
+    disk_read_sector(file_block * 2, load_address);
+    disk_read_sector(file_block * 2 + 1, load_address + 512);
+
+    void (*app_entry)() = (void (*)())0x400000;
+    
+    printf("Starting application...\n");
+    app_entry(); 
+}
