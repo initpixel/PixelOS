@@ -1,7 +1,7 @@
 #ifndef IO_H
 #define IO_H
 
-#include <stdint.h> // Типы должны быть и здесь
+#include <stdint.h>
 
 static inline void outb(uint16_t port, uint8_t val) {
     asm volatile ("outb %0, %1" : : "a"(val), "Nd"(port));
@@ -19,5 +19,10 @@ static inline void io_wait(void) {
 
 void pic_remap(int offset1, int offset2);
 void reboot();
+
+extern uint8_t inb(uint16_t port);
+extern void outb(uint16_t port, uint8_t val);
+extern uint16_t inw(uint16_t port);
+
 
 #endif

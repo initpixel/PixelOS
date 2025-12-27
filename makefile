@@ -1,44 +1,61 @@
-# Настройки компилятора
 CC = gcc
 AS = nasm
 LD = ld
 
-CFLAGS = -m32 -ffreestanding -Iinclude -c
+# Output binary name
+TARGET = pixelos.bin
+
+# Compilation flags
+CFLAGS = -m32 -ffreestanding -Iinclude -c -Wall
 ASFLAGS = -f elf32
 LDFLAGS = -m elf_i386 -T link.ld
 
-# Папки
-SRCDIR = lib
+# Directories
+LIBDIR = lib
+KERNELDIR = kernel
 OBJDIR = objectFiles
 
-# Автоматический поиск всех .c файлов в lib/ и добавление kernel.c
-C_SOURCES = $(wildcard $(SRCDIR)/*.c) kernel.c
-# Превращение путей .c в пути .o в папке objectFiles
+# --- FILE SEARCH LOGIC ---
+
+# Search for all .c files in lib/, kernel/ and all subdirectories (e.g., kernel/fs/)
+C_SOURCES = $(wildcard $(LIBDIR)/*.c) \
+            $(wildcard $(KERNELDIR)/*.c) \
+            $(wildcard $(KERNELDIR)/**/*.c)
+
+# Main assembly source file
+ASM_SOURCE = $(KERNELDIR)/kernel.asm
+
+# Convert .c source paths to .o object files inside OBJDIR
+# $(notdir) is used to prevent path conflicts for object files
 OBJ = $(patsubst %.c, $(OBJDIR)/%.o, $(notdir $(C_SOURCES)))
-# Добавляем ассемблерный файл
 OBJ += $(OBJDIR)/kasm.o
 
-# Главная цель
-all: prepare kernel
+# --- BUILD RULES ---
 
-# Создание папки для объектов
+all: prepare $(TARGET)
+
 prepare:
 	mkdir -p $(OBJDIR)
 
-# Линковка
-kernel: $(OBJ)
+# Link the final binary
+$(TARGET): $(OBJ)
 	$(LD) $(LDFLAGS) -o $@ $^
 
-# Компиляция C файлов
-$(OBJDIR)/%.o: $(SRCDIR)/%.c
+# Compile files from lib/
+$(OBJDIR)/%.o: $(LIBDIR)/%.c
 	$(CC) $(CFLAGS) $< -o $@
 
-$(OBJDIR)/kernel.o: kernel.c
+# Compile files from kernel/
+$(OBJDIR)/%.o: $(KERNELDIR)/%.c
 	$(CC) $(CFLAGS) $< -o $@
 
-# Компиляция ASM файла
-$(OBJDIR)/kasm.o: kernel.asm
+# Compile files from nested directories (e.g., kernel/fs/)
+$(OBJDIR)/%.o: $(KERNELDIR)/*/%.c
+	$(CC) $(CFLAGS) $< -o $@
+
+# Compile assembly source
+$(OBJDIR)/kasm.o: $(ASM_SOURCE)
 	$(AS) $(ASFLAGS) $< -o $@
 
 clean:
-	rm -rf $(OBJDIR) kernel
+	rm -rf $(OBJDIR) $(TARGET)
