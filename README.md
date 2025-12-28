@@ -1,11 +1,11 @@
 # Pixel OS
 
-![img](readme/Pixel_os.png)
+![img](readme./Pixel_os.png)
 
 > [!NOTE]
-> v0.3.1
-> delete build.sh 
-> remote library: ascii_art
+> v0.3.2
+>
+> micro fix
 <!-- prettier-ignore-end -->
 
 # Compile
