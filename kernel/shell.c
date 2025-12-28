@@ -14,7 +14,6 @@ void shell_process(char* input) {
         printf("ls    - list files on ext2 disk\n");
         printf("run   - run hello.bin app\n");
         printf("clear - clear the screen\n");
-        printf("Input length: %d\n", strlen(input));
     } 
     else if (strcmp(input, "ls") == 0) {
         ext2_ls();

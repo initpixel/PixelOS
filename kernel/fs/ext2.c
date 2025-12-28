@@ -2,6 +2,8 @@
 #include <drivers/disk.h>
 #include <stdio.h>    
 
+extern void jump_to_user_mode(uint32_t entry_point);
+
 void ext2_detect() {
     uint8_t buffer[1024];
     
@@ -49,8 +51,6 @@ void ext2_ls() {
         entry = (struct ext2_dir_entry*)((uint8_t*)buffer + offset);
     }
 }
-
-extern void jump_to_user_mode(uint32_t entry_point);
 
 void run_app(const char* filename) {
     uint32_t file_block = 10; 

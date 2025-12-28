@@ -4,9 +4,14 @@
 #include <screen.h>
 
 void syscall_dispatcher(struct registers* regs) {
-    switch (regs->eax) {
+    
+    uint32_t syscall_num = regs->eax;
+    
+    switch (syscall_num) {
         case 1: 
-            printf((char*)regs->ebx); 
+            if (regs->ebx != 0) {
+                printf("%s", (char*)regs->ebx); 
+            }
             break;
 
         case 2: 
@@ -18,7 +23,7 @@ void syscall_dispatcher(struct registers* regs) {
             break;
 
         default:
-            printf("Unknown syscall: %d\n", regs->eax);
+            printf("Unknown syscall: %d (HEX: 0x%x)\n", regs->eax, regs->eax);
             break;
     }
 }

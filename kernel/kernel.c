@@ -3,6 +3,7 @@
 #include <drivers/disk.h>
 #include <fs/ext2.h>
 #include <screen.h>
+#include <gdt_idt.h>
 
 extern void init_gdt();
 extern void init_idt();
@@ -13,17 +14,17 @@ extern uint32_t stack_space;
 
 void kmain() {
     screen_clear();
+
     init_gdt();
     
-    init_tss(0x10, (uint32_t)&stack_space); 
+    init_tss(0x10, 0x90000); 
     
     init_idt();
     
-
     char input_buffer[256];
     
     while(1) {
-        screen_print("PixelOS> ");
+        screen_print("Shell> ");
         
         memset(input_buffer, 0, 256);
         
