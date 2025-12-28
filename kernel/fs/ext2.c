@@ -50,16 +50,16 @@ void ext2_ls() {
     }
 }
 
+extern void jump_to_user_mode(uint32_t entry_point);
+
 void run_app(const char* filename) {
     uint32_t file_block = 10; 
-
     uint8_t* load_address = (uint8_t*)0x400000;
 
     disk_read_sector(file_block * 2, load_address);
     disk_read_sector(file_block * 2 + 1, load_address + 512);
 
-    void (*app_entry)() = (void (*)())0x400000;
+    printf("PixelOS: Switching to User Space to run %s...\n", filename);
     
-    printf("Starting application...\n");
-    app_entry(); 
+    jump_to_user_mode(0x400000); 
 }

@@ -2,8 +2,11 @@
 
 ![img](readme/Pixel_os.png)
 
-# versions v0.3
-> **Info:** Added shell
+> [!NOTE]
+> v0.3.1
+> delete build.sh 
+> remote library: ascii_art
+<!-- prettier-ignore-end -->
 
 # Compile
 ```bash

@@ -1,54 +1,82 @@
 bits 32
-section .text
-        ; Multiboot specification header
-        align 4
-        dd 0x1BADB002              ; magic number
-        dd 0x00                    ; flags
-        dd - (0x1BADB002 + 0x00)   ; checksum
+section .multiboot
+    align 4
+    dd 0x1BADB002          ; magic number
+    dd 0x00                ; flags
+    dd - (0x1BADB002 + 0x00) ; checksum
 
 global start
 global inb
 global outb
 global inw
-global syscall_handler      ; Export the handler for IDT registration
+global syscall_handler      ; Export for IDT (Interrupt Descriptor Table)
+global jump_to_user_mode    ; Export for the kernel to switch to Ring 3
+global stack_space
 
-extern kmain                ; Defined in C kernel code
-extern syscall_dispatcher   ; C function to handle specific syscall logic
+extern kmain                ; C kernel entry point
+extern syscall_dispatcher   ; C function for syscall logic
+
+; --- Switch to User Mode (Ring 3) ---
+jump_to_user_mode:
+    mov ebx, [esp + 4]    ; Get the application entry point (e.g., 0x400000)
+
+    ; Set up the stack for IRETD to perform a privilege level switch
+    ; The stack must contain: SS, ESP, EFLAGS, CS, EIP (in this order)
+    
+    push 0x23             ; User Data Segment Selector (Index 4, RPL 3)
+    push 0x90000          ; User Stack Pointer (ESP)
+    
+    pushfd                ; Push current EFLAGS
+    pop eax
+    or eax, 0x200         ; Enable Interrupts (IF bit) in User Mode
+    push eax
+    
+    push 0x1B             ; User Code Segment Selector (Index 3, RPL 3)
+    push ebx              ; Application Entry Point (EIP)
+
+    ; Set Data Segment registers to User Data Selector
+    mov ax, 0x23
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+
+    iretd                 ; Execute the switch to Ring 3
 
 start:
-    cli                     ; Clear interrupts
-    mov esp, stack_space    ; Setup kernel stack pointer
-    call kmain              ; Jump to C code
-    hlt                     ; Halt CPU if kmain returns
+    cli                     ; Disable interrupts during setup
+    mov esp, stack_space    ; Initialize the kernel stack pointer
+    call kmain              ; Jump to the C kernel
+    hlt                     ; Halt CPU if the kernel returns
 
-; --- System Calls ---
+; --- System Call Handler ---
 syscall_handler:
     pushad                  ; Save all general-purpose registers
-    push esp                ; Push pointer to registers as an argument for C
-    call syscall_dispatcher ; Call the C dispatcher
-    add esp, 4              ; Clean up stack after call
+    push esp                ; Pass the pointer to the registers as an argument to C
+    call syscall_dispatcher ; Execute the syscall logic in C
+    add esp, 4              ; Clean up the stack
     popad                   ; Restore all general-purpose registers
-    iretd                   ; Interrupt return (restore EIP, CS, EFLAGS)
+    iretd                   ; Return from interrupt (restores CS, EIP, EFLAGS)
 
-; --- I/O Functions ---
+; --- I/O Functions (Port Access) ---
 inb:
-    mov edx, [esp + 4]      ; Get port number from stack
+    mov edx, [esp + 4]      ; Port address
     xor eax, eax
-    in al, dx               ; Read byte from port
+    in al, dx               ; Read 1 byte
     ret
 
 outb:
-    mov edx, [esp + 4]      ; Get port number
-    mov al, [esp + 8]       ; Get data byte
-    out dx, al              ; Write byte to port
+    mov edx, [esp + 4]      ; Port address
+    mov al, [esp + 8]       ; Data byte
+    out dx, al              ; Write 1 byte
     ret
 
 inw:
-    mov edx, [esp + 4]      ; Get port number
+    mov edx, [esp + 4]      ; Port address
     xor eax, eax
-    in ax, dx               ; Read word (16-bit) from port
+    in ax, dx               ; Read 2 bytes (word)
     ret
 
 section .bss
-resb 8192                   ; Reserve 8KB for the stack
+resb 8192                   ; Reserve 8KB for the kernel stack
 stack_space:

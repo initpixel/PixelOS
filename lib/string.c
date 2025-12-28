@@ -41,3 +41,9 @@ void itoa(uint32_t n, char* str) {
     }
     str[j] = '\0';
 }
+
+void* memset(void* dest, int val, uint32_t len) {
+    unsigned char* ptr = (unsigned char*)dest;
+    while (len-- > 0) *ptr++ = (unsigned char)val;
+    return dest;
+}
