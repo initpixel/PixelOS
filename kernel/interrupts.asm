@@ -1,33 +1,32 @@
 bits 32
-
 global syscall_handler
+global dummy_handler
 extern syscall_dispatcher
 
-section .text
+dummy_handler:
+    iretd
 
 syscall_handler:
-    ; 1. Processor pushed: SS, ESP, EFLAGS, CS, EIP
-    ; 2. Push general purpose registers (EDI, ESI, EBP, ESP, EBX, EDX, ECX, EAX)
-    pushad    
-    
-    ; 3. Push segments (Matches 'ds' and 'es' in your C struct)
-    push ds
-    push es
+    mov byte [0xB8000], '!' ; Выведет '!' в левом верхнем углу экрана
+    mov byte [0xB8001], 0x0F
 
-    ; 4. Load Kernel Data Segment
+    pushad    ; 1. Пушит EAX, ECX, EDX, EBX, ESP, EBP, ESI, EDI
+    push fs   ; 2.
+    push gs   ; 3.
+    push es   ; 4.
+    push ds   ; 5. Последний PUSH (самый низкий адрес)
+
     mov ax, 0x10
     mov ds, ax
     mov es, ax
-    mov fs, ax
-    mov gs, ax
 
-    ; 5. Pass ESP (pointer to the whole stack frame) to C
-    push esp
+    push esp  ; Передаем указатель на DS
     call syscall_dispatcher
-    add esp, 4      ; Clean up the argument from stack
+    add esp, 4
 
-    ; 6. Restore everything
+    pop ds    ; Первый POP
     pop es
-    pop ds
+    pop gs
+    pop fs
     popad
     iretd

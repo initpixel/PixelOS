@@ -3,10 +3,10 @@
 ![img](readme./Pixel_os.png)
 
 > [!NOTE]
-> v0.3.3
-> fix
+> v0.3.4
+> added debug and apps(1/2)
 <!-- prettier-ignore-end -->
-### Fixed 1/2: Reason ( syscall )
+### Fixed 2/2: Reason ( syscall )
 
 # Compile
 ```bash

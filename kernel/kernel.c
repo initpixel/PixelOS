@@ -1,3 +1,8 @@
+// ==================================================================
+// PixelOS -- Pixel kernel
+// Copyright (C) 2025 initpixel
+// ==================================================================
+
 #include <stdio.h>
 #include <string.h>
 #include <drivers/disk.h>
@@ -11,29 +16,22 @@ extern void init_tss(uint32_t ss0, uint32_t esp0);
 extern void shell_process(char* input);
 extern void jump_to_user_mode(uint32_t entry_point);
 extern uint32_t stack_space;
+static uint8_t kernel_stack[8192]; 
 
 void kmain() {
     screen_clear();
+    __asm__ __volatile__("cli");
 
     init_gdt();
-    
-    init_tss(0x10, 0x90000); 
-    
+    init_tss(0x10, (uint32_t)kernel_stack + 8192);
     init_idt();
     
-    char input_buffer[256];
+    printf("Kernel initialized. Launching shell...\n");
+
+    run_app("shell.bin"); 
+
+    printf("KERNEL ERROR: We should be in Ring 3, but we are still here!\n");
     
-    while(1) {
-        screen_print("Shell> ");
-        
-        memset(input_buffer, 0, 256);
-        
-        gets(input_buffer);
-        
-        if (strcmp(input_buffer, "run") == 0) {
-            run_app("hello.bin");
-        } else {
-            shell_process(input_buffer);
-        }
-    }
+    while(1) { __asm__ __volatile__("hlt"); };
+    
 }

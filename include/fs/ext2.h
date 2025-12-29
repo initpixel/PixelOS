@@ -24,6 +24,17 @@ struct __attribute__((packed)) ext2_superblock {
     uint16_t s_magic;
 };
 
+struct __attribute__((packed)) ext2_group_desc {
+    uint32_t bg_block_bitmap;
+    uint32_t bg_inode_bitmap;
+    uint32_t bg_inode_table;
+    uint16_t bg_free_blocks_count;
+    uint16_t bg_free_inodes_count;
+    uint16_t bg_used_dirs_count;
+    uint16_t bg_pad;
+    uint32_t bg_reserved;
+};
+
 struct __attribute__((packed)) ext2_inode {
     uint16_t i_mode;
     uint16_t i_uid;
@@ -40,8 +51,16 @@ struct __attribute__((packed)) ext2_inode {
     uint32_t i_block[15];
 };
 
+struct __attribute__((packed)) ext2_dir_entry {
+    uint32_t inode;
+    uint16_t rec_len;
+    uint8_t  name_len;
+    uint8_t  file_type;
+    char     name[];
+};
+
 void ext2_detect(void);
-void ext2_ls();
+void ext2_ls(void);
 void run_app(const char* filename);
 
 #endif

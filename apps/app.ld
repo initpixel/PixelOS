@@ -1,9 +1,12 @@
 OUTPUT_FORMAT(binary)
-ENTRY(main)
+ENTRY(_start)
 SECTIONS
 {
-    . = 0x400000;
-    .text : { *(.text) }
+    . = 0x1000000;
+    .text : {
+        *(.text)
+        *(.rodata*) 
+    }
     .data : { *(.data) }
     .bss  : { *(.bss)  }
 }

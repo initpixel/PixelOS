@@ -1,3 +1,8 @@
+; ==================================================================
+; PixelOS -- Pixel kernel
+; Copyright (C) 2025 initpixel
+; ==================================================================
+
 bits 32
 
 section .multiboot
@@ -25,30 +30,33 @@ start:
 
 ; --- Jump to User Mode ---
 jump_to_user_mode:
-cli ; 1. Disable interrupts before jumping
-mov ebx, [esp + 4] ; 2. Get the entry address (application EIP)
+    cli 
+    mov ebx, [esp + 4]
 
-; 3. Set up user data segments (0x23 = Index 4, RPL 3)
-mov ax, 0x23
-mov ds, ax
-mov es, ax
-mov fs, ax
-mov gs, ax
+    mov ax, 0x23
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
 
-; 4. Build the stack for the IRETD instruction
-; The processor is waiting for: SS, ESP, EFLAGS, CS, EIP
-push 0x23 ; User Stack Segment (SS)
-push 0x90000 ; User Stack Pointer (ESP) - make sure the address is free!
+    push 0x23               ; User Stack Segment (SS)
+    push 0x1000000 + 0x10000; User ESP
 
-pushfd ; Save current EFLAGS
-pop eax
-or eax, 0x200 ; Enable interrupt bit (IF) in future mode
-push eax ; EFLAGS
+    pushfd                  ; EFLAGS
+    pop eax
+    or eax, 0x3200
+    push eax
 
-push 0x1B ; User Code Segment (CS) (Index 3, RPL 3)
-push ebx ; User Instruction Pointer (EIP)
+    push 0x1B               ; User Code Segment (CS)
+    push ebx                ; User EIP (addr app)
 
-iretd ; TRANSITION TO USER MODE
+    ; --- Debug ---
+    mov byte [0xB8000], 'J'
+    mov byte [0xB8001], 0x0F
+    ; ---------------
+
+    iretd                   ; Jump in RING 3
+
 
 ; --- I/O Functions ---
 inb:

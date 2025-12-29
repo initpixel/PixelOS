@@ -6,6 +6,26 @@ extern void syscall_handler();
 
 // --- 1. Structures ---
 
+// kernel/fs/ext2.c
+
+// Упрощенная структура иноды
+struct ext2_inode {
+    uint16_t i_mode;
+    uint32_t i_size;
+    uint32_t i_atime;
+    uint32_t i_ctime;
+    uint32_t i_mtime;
+    uint32_t i_dtime;
+    uint16_t i_gid;
+    uint16_t i_links_count;
+    uint32_t i_blocks;
+    uint32_t i_flags;
+    uint32_t i_osd1;
+    uint32_t i_block[15]; // Массив блоков (12 прямых, 1 косвенный и т.д.)
+    // ... остальные поля
+} __attribute__((packed));
+
+
 struct gdt_entry {
     uint16_t limit_low;
     uint16_t base_low;
@@ -111,17 +131,17 @@ void init_tss(uint32_t ss0, uint32_t esp0) {
     __asm__ __volatile__("mov $0x28, %%ax; ltr %%ax" : : : "ax", "memory");
 }
 
+extern void dummy_handler(); 
+
 void init_idt() {
     idtp.limit = (uint16_t)(sizeof(struct idt_entry) * 256) - 1;
     idtp.base  = (uint32_t)&idt;
     memset(&idt, 0, sizeof(idt));
-
-    // Fill with null-gates to prevent triple faults on unhandled interrupts
     for(int i = 0; i < 256; i++) {
-        idt_set_gate(i, (uint32_t)syscall_handler, 0x08, 0x8E);
+        idt_set_gate(i, (uint32_t)dummy_handler, 0x08, 0x8E);
     }
 
-    // Register syscall
-    idt_set_gate(0x80, (uint32_t)syscall_handler, 0x08, 0xEE);
+    idt_set_gate(0x80, (uint32_t)syscall_handler, 0x08, 0xEE); 
+
     __asm__ __volatile__("lidt %0" : : "m"(idtp));
 }

@@ -1,8 +1,17 @@
-void print(char* msg) {
-    asm volatile ("mov $1, %%eax; mov %0, %%ebx; int $0x80" : : "r"(msg) : "eax", "ebx");
+void print(const char* str) {
+    __asm__ __volatile__ (
+        "int $0x80" 
+        : 
+        : "a"(1), "b"(str)
+    );
 }
 
-void main() {
-    print("Hello! I am a real app on PixelOS disk!\n");
-    while(1); 
+void _start() {
+    print("Hello from User Space!\n");
+
+    __asm__ __volatile__ (
+        "int $0x80"
+        :
+        : "a"(2)
+    );
 }
